@@ -1,269 +1,250 @@
-import { useCallback, useEffect, useState } from "react";
-import type { LogAction, LogEntry, Priority, SubTask, Task, TaskLink, TaskStatus } from "@/types";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import type { Task, LogEntry, TaskStatus, Priority, LogAction, SubTask, TaskLink } from "@/types";
 
-interface UserData {
-  tasks: Task[];
-  log: LogEntry[];
+// ── Row mappers ──────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToTask(row: any): Task {
+  return {
+    id: row.id,
+    title: row.title,
+    notes: row.notes ?? undefined,
+    goal: row.goal ?? undefined,
+    acceptance: row.acceptance ?? undefined,
+    estimateMinutes: row.estimate_minutes ?? undefined,
+    steps: (row.steps as SubTask[]) ?? [],
+    links: (row.links as TaskLink[]) ?? [],
+    status: row.status as TaskStatus,
+    priority: row.priority as Priority,
+    category: row.category ?? undefined,
+    dueDate: row.due_date ?? undefined,
+    createdAt: row.created_at,
+    completedAt: row.completed_at ?? undefined,
+    updatedAt: row.updated_at ?? undefined,
+  };
 }
 
-const empty: UserData = { tasks: [], log: [] };
-
-function key(username: string) {
-  return `Donut.data.${username}`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowToLog(row: any): LogEntry {
+  return {
+    id: row.id,
+    taskId: row.task_id ?? undefined,
+    taskTitle: row.task_title,
+    action: row.action as LogAction,
+    at: row.at,
+    note: row.note ?? undefined,
+  };
 }
 
-function read(username: string): UserData {
-  try {
-    const raw = localStorage.getItem(key(username));
-    if (!raw) return empty;
-    const parsed = JSON.parse(raw);
-    return { tasks: parsed.tasks ?? [], log: parsed.log ?? [] };
-  } catch {
-    return empty;
-  }
-}
-
-function write(username: string, data: UserData) {
-  localStorage.setItem(key(username), JSON.stringify(data));
-}
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
+// ── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useTasks(username: string | null) {
-  const [data, setData] = useState<UserData>(empty);
+  const qc = useQueryClient();
+  const tasksKey = ["tasks", username];
+  const logsKey = ["logs", username];
 
-  useEffect(() => {
-    if (!username) {
-      setData(empty);
-      return;
-    }
-    setData(read(username));
-  }, [username]);
-
-  const persist = useCallback(
-    (next: UserData) => {
-      setData(next);
-      if (username) write(username, next);
+  const { data: tasks = [] } = useQuery<Task[]>({
+    queryKey: tasksKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data.map(rowToTask);
     },
-    [username],
-  );
+    enabled: !!username,
+    staleTime: 60_000,
+  });
 
-  const addLog = useCallback(
-    (entry: Omit<LogEntry, "id" | "at">, base: UserData): UserData => ({
-      ...base,
-      log: [{ id: uid(), at: new Date().toISOString(), ...entry }, ...base.log].slice(0, 200),
-    }),
-    [],
-  );
+  const { data: log = [] } = useQuery<LogEntry[]>({
+    queryKey: logsKey,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_logs")
+        .select("*")
+        .order("at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data.map(rowToLog);
+    },
+    enabled: !!username,
+    staleTime: 60_000,
+  });
 
-  const createTask = useCallback(
-    (input: { title: string; notes?: string; priority: Priority; status: TaskStatus; category?: string; dueDate?: string }) => {
-      const task: Task = {
-        id: uid(),
-        title: input.title.trim(),
-        notes: input.notes?.trim() || undefined,
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: tasksKey });
+    qc.invalidateQueries({ queryKey: logsKey });
+  }
+
+  async function addLog(entry: {
+    taskId?: string;
+    taskTitle: string;
+    action: LogAction;
+    note?: string;
+  }) {
+    await supabase.from("activity_logs").insert({
+      task_id: entry.taskId ?? null,
+      task_title: entry.taskTitle,
+      action: entry.action,
+      at: new Date().toISOString(),
+      note: entry.note ?? null,
+    });
+  }
+
+  // ── Mutations ──────────────────────────────────────────────────────────────
+
+  async function createTask(input: {
+    title: string;
+    notes?: string;
+    priority: Priority;
+    status: TaskStatus;
+    category?: string;
+    dueDate?: string;
+  }) {
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        title: input.title,
+        notes: input.notes ?? null,
         priority: input.priority,
         status: input.status,
-        category: input.category?.trim() || undefined,
-        dueDate: input.dueDate || undefined,
-        createdAt: new Date().toISOString(),
-      };
-      const next: UserData = { ...data, tasks: [task, ...data.tasks] };
-      persist(addLog({ taskId: task.id, taskTitle: task.title, action: "created" }, next));
-    },
-    [data, persist, addLog],
-  );
+        category: input.category ?? null,
+        due_date: input.dueDate ?? null,
+      })
+      .select("id, title")
+      .single();
+    if (error) throw error;
+    await addLog({ taskId: data.id, taskTitle: data.title, action: "created" });
+    invalidate();
+  }
 
-  const toggleComplete = useCallback(
-    (id: string) => {
-      const target = data.tasks.find((t) => t.id === id);
-      if (!target) return;
-      const isDone = target.status === "done";
-      const updated: Task = isDone
-        ? { ...target, status: "today", completedAt: undefined }
-        : { ...target, status: "done", completedAt: new Date().toISOString() };
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === id ? updated : t)),
-      };
-      persist(
-        addLog(
-          { taskId: id, taskTitle: target.title, action: isDone ? "uncompleted" : "completed" },
-          next,
-        ),
-      );
-    },
-    [data, persist, addLog],
-  );
+  async function toggleComplete(id: string) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const isDone = task.status === "done";
+    const now = new Date().toISOString();
+    await supabase.from("tasks").update({
+      status: isDone ? "backlog" : "done",
+      completed_at: isDone ? null : now,
+      updated_at: now,
+    }).eq("id", id);
+    await addLog({ taskId: id, taskTitle: task.title, action: isDone ? "uncompleted" : "completed" });
+    invalidate();
+  }
 
-  const moveTask = useCallback(
-    (id: string, status: TaskStatus) => {
-      const target = data.tasks.find((t) => t.id === id);
-      if (!target || target.status === status) return;
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === id ? { ...t, status, completedAt: status === "done" ? new Date().toISOString() : undefined } : t)),
-      };
-      const action: LogAction =
-        status === "today" ? "moved-today" : status === "backlog" ? "moved-backlog" : "completed";
-      persist(addLog({ taskId: id, taskTitle: target.title, action }, next));
-    },
-    [data, persist, addLog],
-  );
+  async function moveTask(id: string, status: TaskStatus) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const now = new Date().toISOString();
+    const action: LogAction =
+      status === "done" ? "completed" :
+      status === "today" ? "moved-today" : "moved-backlog";
+    await supabase.from("tasks").update({
+      status,
+      completed_at: status === "done" ? now : null,
+      updated_at: now,
+    }).eq("id", id);
+    await addLog({ taskId: id, taskTitle: task.title, action });
+    invalidate();
+  }
 
-  const deleteTask = useCallback(
-    (id: string) => {
-      const target = data.tasks.find((t) => t.id === id);
-      if (!target) return;
-      const next: UserData = { ...data, tasks: data.tasks.filter((t) => t.id !== id) };
-      persist(addLog({ taskId: id, taskTitle: target.title, action: "deleted" }, next));
-    },
-    [data, persist, addLog],
-  );
+  async function deleteTask(id: string) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    await supabase.from("tasks").delete().eq("id", id);
+    await addLog({ taskTitle: task.title, action: "deleted" });
+    invalidate();
+  }
 
-  const clearLog = useCallback(() => {
-    persist({ ...data, log: [] });
-  }, [data, persist]);
+  async function updateTask(id: string, patch: Partial<Task>) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.title !== undefined)           update.title            = patch.title;
+    if (patch.notes !== undefined)           update.notes            = patch.notes || null;
+    if (patch.goal !== undefined)            update.goal             = patch.goal || null;
+    if (patch.acceptance !== undefined)      update.acceptance       = patch.acceptance || null;
+    if (patch.estimateMinutes !== undefined) update.estimate_minutes = patch.estimateMinutes ?? null;
+    if (patch.priority !== undefined)        update.priority         = patch.priority;
+    if (patch.status !== undefined)          update.status           = patch.status;
+    if (patch.category !== undefined)        update.category         = patch.category || null;
+    if (patch.dueDate !== undefined)         update.due_date         = patch.dueDate || null;
+    if (patch.steps !== undefined)           update.steps            = patch.steps;
+    if (patch.links !== undefined)           update.links            = patch.links;
+    await supabase.from("tasks").update(update).eq("id", id);
+    await addLog({ taskId: id, taskTitle: patch.title ?? task.title, action: "edited" });
+    invalidate();
+  }
 
-  const updateTask = useCallback(
-    (id: string, patch: Partial<Omit<Task, "id" | "createdAt">>) => {
-      const target = data.tasks.find((t) => t.id === id);
-      if (!target) return;
-      const updated: Task = { ...target, ...patch, updatedAt: new Date().toISOString() };
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === id ? updated : t)),
-      };
-      persist(addLog({ taskId: id, taskTitle: updated.title, action: "edited" }, next));
-    },
-    [data, persist, addLog],
-  );
+  async function addStep(taskId: string, title: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || !title.trim()) return;
+    const step: SubTask = {
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      done: false,
+      createdAt: new Date().toISOString(),
+    };
+    const steps = [...(task.steps ?? []), step];
+    await supabase.from("tasks").update({ steps, updated_at: new Date().toISOString() }).eq("id", taskId);
+    await addLog({ taskId, taskTitle: task.title, action: "step-added", note: step.title });
+    invalidate();
+  }
 
-  const addStep = useCallback(
-    (taskId: string, title: string) => {
-      const target = data.tasks.find((t) => t.id === taskId);
-      if (!target || !title.trim()) return;
-      const step: SubTask = {
-        id: uid(),
-        title: title.trim(),
-        done: false,
-        createdAt: new Date().toISOString(),
-      };
-      const updated: Task = {
-        ...target,
-        steps: [...(target.steps ?? []), step],
-        updatedAt: new Date().toISOString(),
-      };
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === taskId ? updated : t)),
-      };
-      persist(
-        addLog(
-          { taskId, taskTitle: target.title, action: "step-added", note: step.title },
-          next,
-        ),
-      );
-    },
-    [data, persist, addLog],
-  );
+  async function toggleStep(taskId: string, stepId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.steps) return;
+    const now = new Date().toISOString();
+    const steps = task.steps.map((s) =>
+      s.id === stepId ? { ...s, done: !s.done, completedAt: s.done ? undefined : now } : s
+    );
+    await supabase.from("tasks").update({ steps, updated_at: now }).eq("id", taskId);
+    const toggled = steps.find((s) => s.id === stepId);
+    if (toggled?.done) {
+      await addLog({ taskId, taskTitle: task.title, action: "step-completed", note: toggled.title });
+    }
+    invalidate();
+  }
 
-  const toggleStep = useCallback(
-    (taskId: string, stepId: string) => {
-      const target = data.tasks.find((t) => t.id === taskId);
-      if (!target?.steps) return;
-      const step = target.steps.find((s) => s.id === stepId);
-      if (!step) return;
-      const nowDone = !step.done;
-      const updated: Task = {
-        ...target,
-        steps: target.steps.map((s) =>
-          s.id === stepId
-            ? { ...s, done: nowDone, completedAt: nowDone ? new Date().toISOString() : undefined }
-            : s,
-        ),
-        updatedAt: new Date().toISOString(),
-      };
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === taskId ? updated : t)),
-      };
-      persist(
-        nowDone
-          ? addLog(
-              { taskId, taskTitle: target.title, action: "step-completed", note: step.title },
-              next,
-            )
-          : next,
-      );
-    },
-    [data, persist, addLog],
-  );
+  async function removeStep(taskId: string, stepId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.steps) return;
+    const removed = task.steps.find((s) => s.id === stepId);
+    const steps = task.steps.filter((s) => s.id !== stepId);
+    await supabase.from("tasks").update({ steps, updated_at: new Date().toISOString() }).eq("id", taskId);
+    await addLog({ taskId, taskTitle: task.title, action: "step-removed", note: removed?.title });
+    invalidate();
+  }
 
-  const removeStep = useCallback(
-    (taskId: string, stepId: string) => {
-      const target = data.tasks.find((t) => t.id === taskId);
-      if (!target?.steps) return;
-      const step = target.steps.find((s) => s.id === stepId);
-      const updated: Task = {
-        ...target,
-        steps: target.steps.filter((s) => s.id !== stepId),
-        updatedAt: new Date().toISOString(),
-      };
-      const next: UserData = {
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === taskId ? updated : t)),
-      };
-      persist(
-        addLog(
-          { taskId, taskTitle: target.title, action: "step-removed", note: step?.title },
-          next,
-        ),
-      );
-    },
-    [data, persist, addLog],
-  );
+  async function addLink(taskId: string, link: Omit<TaskLink, "id">) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const newLink: TaskLink = { id: crypto.randomUUID(), ...link };
+    const links = [...(task.links ?? []), newLink];
+    await supabase.from("tasks").update({ links, updated_at: new Date().toISOString() }).eq("id", taskId);
+    invalidate();
+  }
 
-  const addLink = useCallback(
-    (taskId: string, link: Omit<TaskLink, "id">) => {
-      const target = data.tasks.find((t) => t.id === taskId);
-      if (!target) return;
-      const newLink: TaskLink = { id: uid(), ...link };
-      const updated: Task = {
-        ...target,
-        links: [...(target.links ?? []), newLink],
-        updatedAt: new Date().toISOString(),
-      };
-      persist({
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === taskId ? updated : t)),
-      });
-    },
-    [data, persist],
-  );
+  async function removeLink(taskId: string, linkId: string) {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task?.links) return;
+    const links = task.links.filter((l) => l.id !== linkId);
+    await supabase.from("tasks").update({ links, updated_at: new Date().toISOString() }).eq("id", taskId);
+    invalidate();
+  }
 
-  const removeLink = useCallback(
-    (taskId: string, linkId: string) => {
-      const target = data.tasks.find((t) => t.id === taskId);
-      if (!target?.links) return;
-      const updated: Task = {
-        ...target,
-        links: target.links.filter((l) => l.id !== linkId),
-        updatedAt: new Date().toISOString(),
-      };
-      persist({
-        ...data,
-        tasks: data.tasks.map((t) => (t.id === taskId ? updated : t)),
-      });
-    },
-    [data, persist],
-  );
+  async function clearLog() {
+    await supabase.from("activity_logs").delete().not("id", "is", null);
+    qc.invalidateQueries({ queryKey: logsKey });
+  }
 
   return {
-    tasks: data.tasks,
-    log: data.log,
+    tasks,
+    log,
     createTask,
     toggleComplete,
     moveTask,

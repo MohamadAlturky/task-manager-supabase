@@ -111,9 +111,6 @@ export default function Register() {
           {submitting ? "Inscribing…" : "Create account"}
         </Button>
 
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Donut is a single-user, local app. Your data is stored only in this browser.
-        </p>
       </form>
     </AuthLayout>
   );

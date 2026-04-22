@@ -1,9 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { sha256 } from "@/lib/hash";
-import type { StoredUser } from "@/types";
-
-const USERS_KEY = "Donut.users";
-const SESSION_KEY = "Donut.session";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextValue {
   user: string | null;
@@ -15,66 +18,79 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function readUsers(): Record<string, StoredUser> {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function writeUsers(users: Record<string, StoredUser>) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) setUser(session);
-    setLoading(false);
+    // Restore session on mount using the stored refresh token.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user?.user_metadata?.username ?? null);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user?.user_metadata?.username ?? null);
+      },
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       loading,
+
       async register(username, password) {
         const u = username.trim().toLowerCase();
-        if (u.length < 3) return { ok: false, error: "Username must be at least 3 characters." };
+        if (u.length < 3)
+          return { ok: false, error: "Username must be at least 3 characters." };
         if (!/^[a-z0-9_.-]+$/.test(u))
           return { ok: false, error: "Use letters, numbers, _ . - only." };
         if (password.length < 6)
           return { ok: false, error: "Password must be at least 6 characters." };
-        const users = readUsers();
-        if (users[u]) return { ok: false, error: "That username is already taken." };
-        users[u] = {
-          username: u,
-          passwordHash: await sha256(password),
-          createdAt: new Date().toISOString(),
-        };
-        writeUsers(users);
-        localStorage.setItem(SESSION_KEY, u);
-        setUser(u);
+
+        const { error } = await supabase.auth.signUp({
+          email: `${u}@masaj.app`,
+          password,
+          options: { data: { username: u } },
+        });
+
+        if (error) {
+          if (error.message.toLowerCase().includes("already registered"))
+            return { ok: false, error: "That username is already taken." };
+          return { ok: false, error: error.message };
+        }
+
         return { ok: true };
       },
+
       async login(username, password) {
         const u = username.trim().toLowerCase();
-        const users = readUsers();
-        const record = users[u];
-        if (!record) return { ok: false, error: "No such account. Try registering." };
-        const hash = await sha256(password);
-        if (hash !== record.passwordHash)
-          return { ok: false, error: "Incorrect password." };
-        localStorage.setItem(SESSION_KEY, u);
-        setUser(u);
+
+        const { data: email, error: rpcError } = await supabase
+          .rpc("get_email_by_username", { p_username: u });
+
+        if (rpcError)
+          return { ok: false, error: "Could not reach the server. Try again." };
+        if (!email)
+          return { ok: false, error: "No such account. Try registering." };
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          if (error.message.toLowerCase().includes("invalid login credentials"))
+            return { ok: false, error: "Incorrect password." };
+          return { ok: false, error: error.message };
+        }
+
         return { ok: true };
       },
+
       logout() {
-        localStorage.removeItem(SESSION_KEY);
-        setUser(null);
+        supabase.auth.signOut();
       },
     }),
     [user, loading],
