@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Vellum & Ink — an archival, editorial design system.
+   All colors HSL. Tokens drive every surface.
+*/
+
+@layer base {
+  :root {
+    --background: 40 33% 96%;          /* vellum */
+    --foreground: 24 14% 10%;          /* ink */
+
+    --card: 40 40% 98%;
+    --card-foreground: 24 14% 10%;
+
+    --popover: 40 40% 98%;
+    --popover-foreground: 24 14% 10%;
+
+    --primary: 24 14% 10%;             /* ink */
+    --primary-foreground: 40 33% 96%;
+
+    --secondary: 36 30% 92%;           /* parchment */
+    --secondary-foreground: 24 14% 15%;
+
+    --muted: 36 25% 90%;
+    --muted-foreground: 24 8% 40%;
+
+    --accent: 25 60% 31%;              /* oxide / leather brown */
+    --accent-foreground: 40 33% 96%;
+
+    --destructive: 0 55% 38%;          /* seal red */
+    --destructive-foreground: 40 33% 96%;
+
+    --border: 36 22% 84%;
+    --input: 36 22% 84%;
+    --ring: 24 14% 20%;
+
+    --radius: 0.5rem;
+
+    /* Vellum & Ink semantic */
+    --vellum: 40 33% 96%;
+    --parchment: 36 30% 92%;
+    --leather: 24 22% 16%;
+    --ink-soft: 24 14% 25%;
+    --oxide: 25 60% 31%;
+    --seal: 0 55% 38%;
+    --gold: 38 55% 52%;
+
+    /* Gradients */
+    --gradient-vellum: radial-gradient(ellipse at top, hsl(40 38% 97%), hsl(36 25% 90%));
+    --gradient-leather: linear-gradient(160deg, hsl(24 22% 16%), hsl(20 18% 10%));
+    --gradient-ledger: linear-gradient(to bottom, transparent 31px, hsl(36 22% 84% / 0.6) 32px);
+
+    /* Shadows */
+    --shadow-page: 0 1px 2px hsl(24 14% 10% / 0.04), 0 8px 24px -8px hsl(24 14% 10% / 0.08);
+    --shadow-card: 0 1px 0 hsl(40 33% 100% / 0.6) inset, 0 1px 3px hsl(24 14% 10% / 0.06);
+    --shadow-quill: 0 12px 32px -10px hsl(24 14% 10% / 0.18);
+
+    --transition-ink: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 24 22% 16%;
+    --sidebar-foreground: 40 33% 92%;
+    --sidebar-primary: 0 55% 38%;
+    --sidebar-primary-foreground: 40 33% 96%;
+    --sidebar-accent: 24 18% 22%;
+    --sidebar-accent-foreground: 40 33% 96%;
+    --sidebar-border: 24 14% 24%;
+    --sidebar-ring: 0 55% 38%;
+  }
+
+  .dark {
+    --background: 24 14% 8%;
+    --foreground: 40 33% 92%;
+    --card: 24 16% 11%;
+    --card-foreground: 40 33% 92%;
+    --popover: 24 16% 11%;
+    --popover-foreground: 40 33% 92%;
+    --primary: 40 33% 92%;
+    --primary-foreground: 24 14% 10%;
+    --secondary: 24 14% 16%;
+    --secondary-foreground: 40 33% 92%;
+    --muted: 24 14% 16%;
+    --muted-foreground: 40 10% 65%;
+    --accent: 38 55% 52%;
+    --accent-foreground: 24 14% 10%;
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 40 33% 92%;
+    --border: 24 14% 20%;
+    --input: 24 14% 20%;
+    --ring: 38 55% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-image: var(--gradient-vellum);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: 'Cormorant Garamond', 'Georgia', serif;
+  }
+  .ledger-lines {
+    background-image: var(--gradient-ledger);
+    background-size: 100% 32px;
+  }
+  .shadow-page { box-shadow: var(--shadow-page); }
+  .shadow-card-soft { box-shadow: var(--shadow-card); }
+  .shadow-quill { box-shadow: var(--shadow-quill); }
+
+  .paper-texture {
+    background-color: hsl(var(--vellum));
+    background-image:
+      radial-gradient(hsl(24 14% 10% / 0.025) 1px, transparent 1px),
+      radial-gradient(hsl(24 14% 10% / 0.02) 1px, transparent 1px);
+    background-size: 24px 24px, 13px 13px;
+    background-position: 0 0, 6px 6px;
+  }
+
+  .ink-underline {
+    background-image: linear-gradient(to right, hsl(var(--accent)), hsl(var(--accent)));
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+  }
+}
