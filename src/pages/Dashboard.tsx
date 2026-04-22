@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/hooks/useTasks";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -6,7 +6,7 @@ import { TaskCard } from "@/components/dashboard/TaskCard";
 import { ActivityLog } from "@/components/dashboard/ActivityLog";
 import { NewTaskDialog } from "@/components/dashboard/NewTaskDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Menu, LogOut, BookOpen } from "lucide-react";
+import { Plus, Menu, LogOut, BookOpen, PanelLeft, PanelLeftClose } from "lucide-react";
 import { formatLongDate } from "@/lib/task-utils";
 import {
   Sheet,
@@ -18,6 +18,8 @@ import { ActivityLogMobile } from "@/components/dashboard/ActivityLogMobile";
 
 type View = "today" | "backlog" | "log";
 
+const SIDEBAR_OPEN_KEY = "chronicle-sidebar-open";
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { tasks, log, createTask, toggleComplete, moveTask, deleteTask, clearLog } = useTasks(user);
@@ -26,6 +28,21 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogStatus, setDialogStatus] = useState<"today" | "backlog">("today");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_OPEN_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_OPEN_KEY, sidebarOpen ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarOpen]);
 
   const todayTasks = useMemo(
     () =>
@@ -56,7 +73,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar view={view} onChange={setView} />
+      {sidebarOpen && <Sidebar view={view} onChange={setView} />}
 
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
@@ -76,7 +93,7 @@ export default function Dashboard() {
                       <div className="size-9 rounded-sm bg-vellum/10 border border-vellum/20 grid place-items-center">
                         <span className="font-serif text-xl italic text-vellum">C</span>
                       </div>
-                      <span className="font-serif text-2xl italic">Chronicle</span>
+                      <span className="font-serif text-2xl italic">Donut</span>
                     </div>
                     <div className="px-4 space-y-1 flex-1">
                       {(["today", "backlog", "log"] as View[]).map((id) => (
@@ -106,6 +123,23 @@ export default function Dashboard() {
                   </div>
                 </SheetContent>
               </Sheet>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex shrink-0 -ml-1 text-muted-foreground hover:text-foreground"
+                onClick={() => setSidebarOpen((o) => !o)}
+                aria-expanded={sidebarOpen}
+                aria-controls={sidebarOpen ? "app-sidebar" : undefined}
+                aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              >
+                {sidebarOpen ? (
+                  <PanelLeftClose className="size-5" strokeWidth={1.5} />
+                ) : (
+                  <PanelLeft className="size-5" strokeWidth={1.5} />
+                )}
+              </Button>
 
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground hidden sm:block">
@@ -147,21 +181,23 @@ export default function Dashboard() {
         <div className="flex-1 flex min-h-0">
           {/* Backlog column */}
           <section
-            className={`${view === "backlog" ? "flex" : "hidden"} md:flex flex-col w-full md:w-80 lg:w-96 border-r border-border bg-background/40`}
+            className={`${view === "backlog" ? "flex" : "hidden"} md:flex flex-col w-full md:w-80 lg:w-96 border-r border-border/80 bg-muted/20`}
           >
-            <div className="px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/70">
-              <div>
+            <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-secondary/25">
+              <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                   Unwritten intentions
                 </p>
-                <h2 className="font-serif text-2xl italic text-accent mt-1">The Backlog</h2>
+                <h2 className="font-serif text-2xl italic text-accent mt-1.5 leading-tight">
+                  The Backlog
+                </h2>
               </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums shrink-0">
                 {backlogTasks.length} item{backlogTasks.length === 1 ? "" : "s"}
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-3 ledger-lines">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-3 ledger-lines">
               {backlogTasks.length === 0 ? (
                 <EmptyState
                   title="The margin is clear."
@@ -183,11 +219,11 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="px-5 pb-5">
+            <div className="px-4 sm:px-5 pb-5 pt-1 border-t border-border/50 bg-secondary/15">
               <Button
                 variant="ghost"
                 onClick={() => openNew("backlog")}
-                className="w-full justify-start text-muted-foreground hover:text-foreground"
+                className="w-full justify-start text-muted-foreground hover:text-accent rounded-sm"
               >
                 <Plus className="size-4 mr-2" /> Capture an intention
               </Button>
@@ -196,30 +232,32 @@ export default function Dashboard() {
 
           {/* Today column */}
           <section
-            className={`${view === "today" ? "flex" : "hidden"} md:flex flex-col flex-1 bg-parchment/30 min-w-0`}
+            className={`${view === "today" ? "flex" : "hidden"} md:flex flex-col flex-1 min-w-0 relative bg-gradient-to-br from-parchment/45 via-background/90 to-secondary/35 paper-texture`}
           >
-            <div className="px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/70">
-              <div>
+            <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-background/40 backdrop-blur-[2px]">
+              <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
                   In motion
                 </p>
-                <h2 className="font-serif text-2xl italic mt-1">The Current Passage</h2>
+                <h2 className="font-serif text-2xl italic text-foreground mt-1.5 leading-tight">
+                  The Current Passage
+                </h2>
               </div>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground tabular-nums shrink-0">
                 {progress}% complete
               </span>
             </div>
 
             {/* Progress bar */}
-            <div className="h-px bg-border relative">
+            <div className="h-[2px] bg-border/80 relative overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 bg-accent transition-all duration-700"
-                style={{ width: `${progress}%`, height: "2px", top: "-1px" }}
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-accent to-accent/80 transition-[width] duration-700 ease-out shadow-[0_0_12px_hsl(var(--accent)/0.35)]"
+                style={{ width: `${progress}%` }}
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-7">
-              <div className="max-w-2xl mx-auto space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-7">
+              <div className="max-w-2xl mx-auto space-y-3.5">
                 {todayTasks.length === 0 ? (
                   <EmptyState
                     title="A blank page awaits."
@@ -277,13 +315,13 @@ function EmptyState({
   onAction: () => void;
 }) {
   return (
-    <div className="text-center py-14 px-6 animate-fade-in">
-      <div className="inline-flex items-center justify-center size-12 rounded-full bg-secondary/60 mb-4">
-        <BookOpen className="size-5 text-muted-foreground" strokeWidth={1.5} />
+    <div className="rounded-sm border border-border/70 bg-card/60 shadow-card-soft px-6 py-12 sm:py-14 text-center animate-fade-in backdrop-blur-[2px]">
+      <div className="inline-flex items-center justify-center size-12 rounded-full bg-secondary/80 border border-border/60 mb-4">
+        <BookOpen className="size-5 text-accent/90" strokeWidth={1.5} />
       </div>
-      <h3 className="font-serif italic text-2xl">{title}</h3>
+      <h3 className="font-serif italic text-2xl text-foreground">{title}</h3>
       <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto leading-relaxed">{body}</p>
-      <Button onClick={onAction} variant="outline" className="mt-6 rounded-full">
+      <Button onClick={onAction} variant="outline" className="mt-6 rounded-full border-accent/30 hover:bg-accent/10 hover:text-accent hover:border-accent/50">
         <Plus className="size-4 mr-2" /> {cta}
       </Button>
     </div>

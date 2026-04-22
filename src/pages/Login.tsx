@@ -46,7 +46,7 @@ export default function Login() {
       title="Open the ledger"
       footer={
         <>
-          New to Chronicle?{" "}
+          New to Donut?{" "}
           <Link to="/register" className="text-foreground font-medium ink-underline hover:text-accent transition-colors">
             Begin a new volume
           </Link>

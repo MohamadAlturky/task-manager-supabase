@@ -22,7 +22,7 @@ export function AuthLayout({
             <div className="size-9 rounded-sm bg-vellum/10 border border-vellum/20 grid place-items-center">
               <span className="font-serif text-xl text-vellum italic">C</span>
             </div>
-            <span className="font-serif text-2xl italic tracking-tight">Chronicle</span>
+            <span className="font-serif text-2xl italic tracking-tight">Donut</span>
           </div>
 
           <div className="space-y-6 max-w-md">
@@ -49,7 +49,7 @@ export function AuthLayout({
             <div className="size-9 rounded-sm bg-leather grid place-items-center">
               <span className="font-serif text-xl text-vellum italic">C</span>
             </div>
-            <span className="font-serif text-2xl italic">Chronicle</span>
+            <span className="font-serif text-2xl italic">Donut</span>
           </div>
 
           <div className="mb-8">

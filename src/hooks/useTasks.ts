@@ -9,7 +9,7 @@ interface UserData {
 const empty: UserData = { tasks: [], log: [] };
 
 function key(username: string) {
-  return `chronicle.data.${username}`;
+  return `Donut.data.${username}`;
 }
 
 function read(username: string): UserData {

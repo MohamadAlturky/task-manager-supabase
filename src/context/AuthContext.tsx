@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { sha256 } from "@/lib/hash";
 import type { StoredUser } from "@/types";
 
-const USERS_KEY = "chronicle.users";
-const SESSION_KEY = "chronicle.session";
+const USERS_KEY = "Donut.users";
+const SESSION_KEY = "Donut.session";
 
 interface AuthContextValue {
   user: string | null;

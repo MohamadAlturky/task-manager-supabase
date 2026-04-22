@@ -5,7 +5,6 @@ import { useTasks } from "@/hooks/useTasks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -47,6 +46,15 @@ import {
 import { PRIORITY_META, formatDate, formatDateTime } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import type { Priority, TaskStatus } from "@/types";
+
+/** Vellum & ink — controls aligned with dashboard / dialogs */
+const field = cn(
+  "rounded-sm border-border bg-background font-sans text-sm",
+  "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-accent/50",
+);
+const fieldArea = cn(field, "min-h-[80px] py-2.5 leading-relaxed resize-y");
+const selectSm = "h-8 rounded-sm border-border bg-background text-xs";
+const selectContent = "rounded-sm border-border bg-popover";
 
 export default function TaskDetails() {
   const { id } = useParams<{ id: string }>();
@@ -101,7 +109,7 @@ export default function TaskDetails() {
           <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
             It may have been removed from your ledger, or the link is no longer valid.
           </p>
-          <Button asChild variant="outline" className="mt-6 rounded-full">
+          <Button asChild variant="outline" className="mt-6 rounded-sm border-border shadow-card-soft">
             <Link to="/">
               <ArrowLeft className="size-4 mr-2" /> Return to the ledger
             </Link>
@@ -181,23 +189,31 @@ export default function TaskDetails() {
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
-            className="-ml-3 text-muted-foreground hover:text-foreground"
+            className="-ml-3 rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80"
           >
             <ArrowLeft className="size-4 mr-2" /> Ledger
           </Button>
           <div className="flex items-center gap-2">
             {editing ? (
               <>
-                <Button variant="ghost" onClick={() => setEditing(false)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setEditing(false)}
+                  className="rounded-sm text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                >
                   <X className="size-4 mr-2" /> Cancel
                 </Button>
-                <Button onClick={saveEdit}>
+                <Button onClick={saveEdit} className="rounded-sm shadow-card-soft">
                   <Save className="size-4 mr-2" /> Save
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={startEdit} className="rounded-full">
+                <Button
+                  variant="outline"
+                  onClick={startEdit}
+                  className="rounded-sm border-border bg-background shadow-card-soft hover:bg-secondary/80 hover:text-foreground"
+                >
                   <Pencil className="size-3.5 mr-2" /> Edit
                 </Button>
                 <AlertDialog>
@@ -205,29 +221,34 @@ export default function TaskDetails() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:text-destructive"
+                      className="rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       aria-label="Delete entry"
                     >
                       <Trash2 className="size-4" />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="font-serif italic text-2xl">
-                        Strike this entry from the ledger?
+                  <AlertDialogContent className="paper-texture max-w-md gap-0 overflow-hidden p-0 sm:rounded-sm">
+                    <AlertDialogHeader className="px-5 pt-5 pb-4 text-left border-b border-border/80">
+                      <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
+                        Remove entry
+                      </p>
+                      <AlertDialogTitle className="font-serif italic text-2xl text-foreground pt-1 pr-8">
+                        Strike this from the ledger?
                       </AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed pt-2">
                         This cannot be undone. The task and its steps will be removed.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep it</AlertDialogCancel>
+                    <AlertDialogFooter className="px-5 py-4 bg-background/80 border-t border-border/60 sm:justify-end gap-2">
+                      <AlertDialogCancel className="rounded-sm border-border mt-0 hover:bg-secondary/80">
+                        Keep it
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => {
                           deleteTask(task.id);
                           navigate("/");
                         }}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="rounded-sm bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Remove
                       </AlertDialogAction>
@@ -262,7 +283,11 @@ export default function TaskDetails() {
               <Input
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
-                className="mt-3 font-serif italic text-3xl sm:text-4xl h-auto py-2 border-0 border-b border-border rounded-none px-0 focus-visible:ring-0 focus-visible:border-accent"
+                className={cn(
+                  field,
+                  "mt-3 font-serif italic text-2xl sm:text-3xl h-auto py-2.5 px-3",
+                  "border-b-2 border-border focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30",
+                )}
                 placeholder="Title"
               />
             ) : (
@@ -281,10 +306,11 @@ export default function TaskDetails() {
                 type="button"
                 onClick={() => toggleComplete(task.id)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium border transition-colors",
+                  "inline-flex items-center gap-2 rounded-sm px-3.5 py-1.5 text-xs font-medium border border-border",
+                  "shadow-card-soft transition-colors font-sans",
                   isDone
                     ? "bg-seal text-vellum border-seal"
-                    : "border-border hover:border-accent hover:text-accent",
+                    : "bg-background/80 hover:border-accent hover:text-accent hover:bg-secondary/50",
                 )}
               >
                 <CheckCircle2 className="size-3.5" />
@@ -292,10 +318,10 @@ export default function TaskDetails() {
               </button>
 
               <Select value={task.status} onValueChange={(v) => handleStatusChange(v as TaskStatus)}>
-                <SelectTrigger className="w-auto h-8 rounded-full text-xs border-border bg-background">
+                <SelectTrigger className={cn("w-auto", selectSm, "shadow-card-soft")}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className={selectContent}>
                   <SelectItem value="today">Today's passage</SelectItem>
                   <SelectItem value="backlog">Backlog</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
@@ -303,7 +329,7 @@ export default function TaskDetails() {
               </Select>
 
               {overdue && (
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                <span className="inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1 text-[11px] font-medium font-sans bg-destructive/10 text-destructive border border-destructive/25">
                   <Clock className="size-3" /> Overdue
                 </span>
               )}
@@ -322,6 +348,7 @@ export default function TaskDetails() {
                 onChange={(e) => setDraftGoal(e.target.value)}
                 placeholder="What does success look like? Who benefits?"
                 rows={3}
+                className={fieldArea}
               />
             ) : task.goal ? (
               <p className="font-serif italic text-lg leading-relaxed text-foreground/90">
@@ -344,7 +371,10 @@ export default function TaskDetails() {
           >
             {steps.length > 0 && (
               <div className="mb-4">
-                <Progress value={stepsProgress} className="h-1" />
+                <Progress
+                  value={stepsProgress}
+                  className="h-1 rounded-sm bg-border/50 [&>div]:bg-accent [&>div]:transition-all"
+                />
               </div>
             )}
 
@@ -352,13 +382,16 @@ export default function TaskDetails() {
               {steps.map((step) => (
                 <li
                   key={step.id}
-                  className="group flex items-start gap-3 px-3 py-2.5 rounded-md hover:bg-secondary/50 transition-colors"
+                  className="group flex items-start gap-3 px-3 py-2.5 rounded-sm border border-transparent hover:border-border/60 hover:bg-secondary/40 transition-colors"
                 >
                   <GripVertical className="size-3.5 mt-1 text-muted-foreground/30 opacity-0 group-hover:opacity-100" />
                   <Checkbox
                     checked={step.done}
                     onCheckedChange={() => toggleStep(task.id, step.id)}
-                    className="mt-1"
+                    className={cn(
+                      "mt-1 rounded-sm border-accent/40",
+                      "data-[state=checked]:bg-accent data-[state=checked]:border-accent data-[state=checked]:text-accent-foreground",
+                    )}
                   />
                   <div className="flex-1 min-w-0">
                     <p
@@ -392,9 +425,15 @@ export default function TaskDetails() {
                 value={newStep}
                 onChange={(e) => setNewStep(e.target.value)}
                 placeholder="Add a step…"
-                className="flex-1"
+                className={cn(field, "flex-1 shadow-card-soft")}
               />
-              <Button type="submit" variant="outline" size="icon" disabled={!newStep.trim()}>
+              <Button
+                type="submit"
+                variant="outline"
+                size="icon"
+                disabled={!newStep.trim()}
+                className="shrink-0 rounded-sm border-border bg-background shadow-card-soft hover:bg-secondary/80"
+              >
                 <Plus className="size-4" />
               </Button>
             </form>
@@ -412,6 +451,7 @@ export default function TaskDetails() {
                 onChange={(e) => setDraftNotes(e.target.value)}
                 placeholder="Optional context…"
                 rows={5}
+                className={fieldArea}
               />
             ) : task.notes ? (
               <p className="text-sm leading-relaxed text-foreground/85 whitespace-pre-wrap">
@@ -434,6 +474,7 @@ export default function TaskDetails() {
                 onChange={(e) => setDraftAcceptance(e.target.value)}
                 placeholder="e.g. Draft sent to editor, confirmation received…"
                 rows={3}
+                className={fieldArea}
               />
             ) : task.acceptance ? (
               <p className="text-sm leading-relaxed text-foreground/85 whitespace-pre-wrap">
@@ -455,7 +496,7 @@ export default function TaskDetails() {
                 {links.map((link) => (
                   <li
                     key={link.id}
-                    className="group flex items-center gap-3 px-3 py-2 rounded-md border border-border/70 bg-card/60 hover:border-accent/40 transition-colors"
+                    className="group flex items-center gap-3 px-3 py-2 rounded-sm border border-border/80 bg-card/70 shadow-card-soft hover:border-accent/50 transition-colors"
                   >
                     <ExternalLink className="size-3.5 text-muted-foreground shrink-0" />
                     <a
@@ -483,14 +524,21 @@ export default function TaskDetails() {
                 value={newLinkLabel}
                 onChange={(e) => setNewLinkLabel(e.target.value)}
                 placeholder="Label (optional)"
+                className={cn(field, "shadow-card-soft")}
               />
               <Input
                 value={newLinkUrl}
                 onChange={(e) => setNewLinkUrl(e.target.value)}
                 placeholder="https://…"
                 type="url"
+                className={cn(field, "shadow-card-soft")}
               />
-              <Button type="submit" variant="outline" disabled={!newLinkUrl.trim()}>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={!newLinkUrl.trim()}
+                className="rounded-sm border-border bg-background shadow-card-soft hover:bg-secondary/80 sm:min-w-[5.5rem]"
+              >
                 <Plus className="size-4 sm:mr-2" />
                 <span className="hidden sm:inline">Add</span>
               </Button>
@@ -500,9 +548,9 @@ export default function TaskDetails() {
 
         {/* Sidebar */}
         <aside className="space-y-8 lg:sticky lg:top-28 lg:self-start">
-          <div className="rounded-lg border border-border bg-card/60 backdrop-blur-sm shadow-card-soft">
+          <div className="rounded-sm border border-border bg-card/80 paper-texture backdrop-blur-sm shadow-page">
             <div className="px-5 py-4 border-b border-border/70">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-sans">
                 Particulars
               </p>
             </div>
@@ -513,10 +561,10 @@ export default function TaskDetails() {
                     value={draftPriority}
                     onValueChange={(v) => setDraftPriority(v as Priority)}
                   >
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className={cn(selectSm, "shadow-card-soft")}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={selectContent}>
                       <SelectItem value="low">Low</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
                       <SelectItem value="high">High</SelectItem>
@@ -537,7 +585,7 @@ export default function TaskDetails() {
                     type="date"
                     value={draftDue}
                     onChange={(e) => setDraftDue(e.target.value)}
-                    className="h-8 text-xs"
+                    className={cn(field, "h-8 py-1 text-xs shadow-card-soft")}
                   />
                 ) : task.dueDate ? (
                   <span
@@ -559,7 +607,7 @@ export default function TaskDetails() {
                     value={draftCategory}
                     onChange={(e) => setDraftCategory(e.target.value)}
                     placeholder="e.g. Strategy"
-                    className="h-8 text-xs"
+                    className={cn(field, "h-8 py-1 text-xs shadow-card-soft")}
                     maxLength={40}
                   />
                 ) : task.category ? (
@@ -577,7 +625,7 @@ export default function TaskDetails() {
                     value={draftEstimate}
                     onChange={(e) => setDraftEstimate(e.target.value)}
                     placeholder="minutes"
-                    className="h-8 text-xs"
+                    className={cn(field, "h-8 py-1 text-xs shadow-card-soft tabular-nums")}
                   />
                 ) : task.estimateMinutes ? (
                   <span className="tabular-nums">
@@ -704,7 +752,7 @@ function EmptyHint({ text, onAdd }: { text: string; onAdd: () => void }) {
     <button
       type="button"
       onClick={onAdd}
-      className="w-full text-left text-sm italic text-muted-foreground border border-dashed border-border rounded-md px-4 py-3 hover:border-accent/50 hover:text-foreground transition-colors"
+      className="w-full text-left text-sm italic text-muted-foreground border border-dashed border-border/80 rounded-sm px-4 py-3 bg-background/40 hover:border-accent/40 hover:bg-secondary/30 hover:text-foreground transition-colors shadow-card-soft"
     >
       {text} <span className="not-italic underline">Edit to add.</span>
     </button>

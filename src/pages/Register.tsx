@@ -112,7 +112,7 @@ export default function Register() {
         </Button>
 
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Chronicle is a single-user, local app. Your data is stored only in this browser.
+          Donut is a single-user, local app. Your data is stored only in this browser.
         </p>
       </form>
     </AuthLayout>
