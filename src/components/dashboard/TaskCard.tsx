@@ -1,6 +1,6 @@
 import type { Task } from "@/types";
 import { PRIORITY_META, formatDate } from "@/lib/task-utils";
-import { Check, ArrowLeft, ArrowRight, Trash2, ListChecks } from "lucide-react";
+import { Check, ArrowLeft, ArrowRight, Trash2, ListChecks, Archive } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -11,9 +11,10 @@ interface Props {
   onToggle: () => void;
   onMove: () => void;
   onDelete: () => void;
+  onArchive?: () => void;
 }
 
-export function TaskCard({ task, variant = "today", onToggle, onMove, onDelete }: Props) {
+export function TaskCard({ task, variant = "today", onToggle, onMove, onDelete, onArchive }: Props) {
   const meta = PRIORITY_META[task.priority];
   const done = task.status === "done";
   const overdue =
@@ -103,6 +104,19 @@ export function TaskCard({ task, variant = "today", onToggle, onMove, onDelete }
         </div>
 
         <div className="flex flex-col gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+          {onArchive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground hover:text-accent"
+              onClick={onArchive}
+              aria-label="Archive task"
+              title="Archive"
+            >
+              <Archive className="size-3.5" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"

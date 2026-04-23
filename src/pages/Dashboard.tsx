@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogMobile } from "@/components/dashboard/ActivityLogMobile";
+import { ArchivedTasksTable } from "@/components/dashboard/ArchivedTasksTable";
 
-type View = "today" | "backlog" | "log";
+type View = "today" | "backlog" | "log" | "archived";
 
 const SIDEBAR_OPEN_KEY = "chronicle-sidebar-open";
 // just push
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const { tasks, log, createTask, toggleComplete, moveTask, deleteTask, clearLog } = useTasks(user);
+  const { tasks, log, createTask, toggleComplete, moveTask, deleteTask, clearLog, toggleArchive } = useTasks(user);
 
   const [view, setView] = useState<View>("today");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -96,7 +97,7 @@ export default function Dashboard() {
                       <span className="font-serif text-2xl italic">Donut</span>
                     </div>
                     <div className="px-4 space-y-1 flex-1">
-                      {(["today", "backlog", "log"] as View[]).map((id) => (
+                      {(["today", "backlog", "log", "archived"] as View[]).map((id) => (
                         <button
                           key={id}
                           onClick={() => {
@@ -107,7 +108,7 @@ export default function Dashboard() {
                             view === id ? "bg-vellum/10 text-vellum" : "text-vellum/60"
                           }`}
                         >
-                          {id === "today" ? "Daily Record" : id === "backlog" ? "The Backlog" : "History"}
+                          {id === "today" ? "Daily Record" : id === "backlog" ? "The Backlog" : id === "log" ? "History" : "Archived Tasks"}
                         </button>
                       ))}
                     </div>
@@ -168,10 +169,11 @@ export default function Dashboard() {
           {/* Mobile view tabs */}
           <div className="md:hidden px-5 pb-3">
             <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-              <TabsList className="grid grid-cols-3 w-full bg-secondary/60">
+              <TabsList className="grid grid-cols-4 w-full bg-secondary/60">
                 <TabsTrigger value="today">Today</TabsTrigger>
                 <TabsTrigger value="backlog">Backlog</TabsTrigger>
                 <TabsTrigger value="log">History</TabsTrigger>
+                <TabsTrigger value="archived">Archived</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -181,7 +183,7 @@ export default function Dashboard() {
         <div className="flex-1 flex min-h-0">
           {/* Backlog column */}
           <section
-            className={`${view === "backlog" ? "flex" : "hidden"} md:flex flex-col w-full md:w-80 lg:w-96 border-r border-border/80 bg-muted/20`}
+            className={`${view === "backlog" ? "flex" : "hidden"} ${view !== "archived" ? "md:flex" : "md:hidden"} flex-col w-full md:w-80 lg:w-96 border-r border-border/80 bg-muted/20`}
           >
             <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-secondary/25">
               <div className="min-w-0">
@@ -214,6 +216,7 @@ export default function Dashboard() {
                     onToggle={() => toggleComplete(t.id)}
                     onMove={() => moveTask(t.id, "today")}
                     onDelete={() => deleteTask(t.id)}
+                    onArchive={() => toggleArchive(t.id, true)}
                   />
                 ))
               )}
@@ -232,7 +235,7 @@ export default function Dashboard() {
 
           {/* Today column */}
           <section
-            className={`${view === "today" ? "flex" : "hidden"} md:flex flex-col flex-1 min-w-0 relative bg-gradient-to-br from-parchment/45 via-background/90 to-secondary/35 paper-texture`}
+            className={`${view === "today" ? "flex" : "hidden"} ${view !== "archived" ? "md:flex" : "md:hidden"} flex-col flex-1 min-w-0 relative bg-gradient-to-br from-parchment/45 via-background/90 to-secondary/35 paper-texture`}
           >
             <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-background/40 backdrop-blur-[2px]">
               <div className="min-w-0">
@@ -274,6 +277,7 @@ export default function Dashboard() {
                       onToggle={() => toggleComplete(t.id)}
                       onMove={() => moveTask(t.id, "backlog")}
                       onDelete={() => deleteTask(t.id)}
+                      onArchive={() => toggleArchive(t.id, true)}
                     />
                   ))
                 )}
@@ -288,8 +292,25 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Archived view */}
+          {view === "archived" && (
+            <div className="flex-1 overflow-y-auto w-full bg-background px-4 sm:px-6 lg:px-8 py-6">
+              <div className="max-w-5xl mx-auto">
+                <div className="mb-6">
+                  <h2 className="font-serif text-2xl italic text-foreground leading-tight">
+                    Archived Tasks
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Past intentions stored for reference.
+                  </p>
+                </div>
+                <ArchivedTasksTable />
+              </div>
+            </div>
+          )}
+
           {/* Desktop activity log */}
-          <ActivityLog log={log} onClear={clearLog} />
+          {view !== "archived" && <ActivityLog log={log} onClear={clearLog} />}
         </div>
       </main>
 

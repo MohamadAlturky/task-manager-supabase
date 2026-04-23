@@ -22,6 +22,8 @@ function rowToTask(row: any): Task {
     createdAt: row.created_at,
     completedAt: row.completed_at ?? undefined,
     updatedAt: row.updated_at ?? undefined,
+    archived: row.archived ?? false,
+    archivedAt: row.archived_at ?? undefined,
   };
 }
 
@@ -50,6 +52,7 @@ export function useTasks(username: string | null) {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
+        .eq("archived", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data.map(rowToTask);
@@ -237,6 +240,17 @@ export function useTasks(username: string | null) {
     invalidate();
   }
 
+  async function toggleArchive(id: string, isArchived: boolean) {
+    const now = new Date().toISOString();
+    await supabase.from("tasks").update({
+      archived: isArchived,
+      archived_at: isArchived ? now : null,
+      updated_at: now,
+    }).eq("id", id);
+    await addLog({ taskTitle: "Task", action: isArchived ? "archived" : "unarchived" });
+    invalidate();
+  }
+
   async function clearLog() {
     await supabase.from("activity_logs").delete().not("id", "is", null);
     qc.invalidateQueries({ queryKey: logsKey });
@@ -256,5 +270,6 @@ export function useTasks(username: string | null) {
     removeStep,
     addLink,
     removeLink,
+    toggleArchive,
   };
 }

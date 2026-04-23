@@ -2,8 +2,8 @@ import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  view: "today" | "backlog" | "log";
-  onChange: (v: "today" | "backlog" | "log") => void;
+  view: "today" | "backlog" | "log" | "archived";
+  onChange: (v: "today" | "backlog" | "log" | "archived") => void;
 }
 
 const NAV_LINK =
@@ -19,6 +19,7 @@ export function Sidebar({ view, onChange }: Props) {
     { id: "today", label: "Daily Record" },
     { id: "backlog", label: "The Backlog" },
     { id: "log", label: "History" },
+    { id: "archived", label: "Archived Tasks" },
   ];
 
   return (

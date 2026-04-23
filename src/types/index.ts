@@ -37,6 +37,8 @@ export interface Task {
   createdAt: string;
   completedAt?: string;
   updatedAt?: string;
+  archived?: boolean;
+  archivedAt?: string;
 }
 
 export type LogAction =
@@ -49,7 +51,9 @@ export type LogAction =
   | "edited"
   | "step-added"
   | "step-completed"
-  | "step-removed";
+  | "step-removed"
+  | "archived"
+  | "unarchived";
 
 export interface LogEntry {
   id: string;

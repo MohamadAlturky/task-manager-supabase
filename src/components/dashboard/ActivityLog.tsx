@@ -13,6 +13,8 @@ const ACTION_LABEL: Record<LogEntry["action"], { text: string; tone: string }> =
   "step-added": { text: "Step added", tone: "bg-oxide" },
   "step-completed": { text: "Step finished", tone: "bg-seal" },
   "step-removed": { text: "Step removed", tone: "bg-foreground/30" },
+  archived: { text: "Archived", tone: "bg-foreground/30" },
+  unarchived: { text: "Unarchived", tone: "bg-foreground/30" },
 };
 
 export function ActivityLog({ log, onClear }: { log: LogEntry[]; onClear: () => void }) {
