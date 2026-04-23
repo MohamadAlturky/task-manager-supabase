@@ -97,6 +97,8 @@
 @layer base {
   * {
     @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--accent) / 0.42) hsl(var(--muted) / 0.55);
   }
   html, body, #root {
     height: 100%;
@@ -107,6 +109,74 @@
     background-image: var(--gradient-vellum);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Global scrollbars — WebKit / Chromium (thumb matches oxide accent).
+   */
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.45);
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--accent) / 0.42);
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--muted) / 0.45);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent) / 0.6);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: hsl(var(--muted) / 0.35);
+  }
+
+  .dark * {
+    scrollbar-color: hsl(var(--accent) / 0.5) hsl(var(--muted) / 0.7);
+  }
+
+  .dark *::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.5);
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background: hsl(var(--accent) / 0.45);
+    border-color: hsl(var(--muted) / 0.5);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent) / 0.65);
+  }
+
+  /* Leather nav — slightly softer thumb so it reads on dark vellum text areas */
+  #app-sidebar *,
+  .bg-leather * {
+    scrollbar-color: hsl(var(--vellum) / 0.38) hsl(var(--sidebar-accent));
+  }
+
+  #app-sidebar *::-webkit-scrollbar-track,
+  .bg-leather *::-webkit-scrollbar-track {
+    background: hsl(var(--sidebar-accent) / 0.95);
+    border-radius: 9999px;
+  }
+
+  #app-sidebar *::-webkit-scrollbar-thumb,
+  .bg-leather *::-webkit-scrollbar-thumb {
+    background: hsl(var(--vellum) / 0.35);
+    border-color: hsl(var(--sidebar-accent));
+  }
+
+  #app-sidebar *::-webkit-scrollbar-thumb:hover,
+  .bg-leather *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--vellum) / 0.52);
   }
 }
 

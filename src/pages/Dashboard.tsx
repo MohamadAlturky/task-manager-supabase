@@ -193,7 +193,11 @@ export default function Dashboard() {
                   {completedToday}<span className="text-muted-foreground">/{totalToday}</span> · {progress}%
                 </p>
               </div>
-              <Button onClick={() => openNew("today")} className="rounded-full px-5 gap-2">
+              <Button
+                onClick={() => openNew("today")}
+                variant="outline"
+                className="rounded-full px-5 gap-2 border-accent/30 bg-background/80 hover:bg-accent/10 hover:text-accent hover:border-accent/50"
+              >
                 <Plus className="size-4" />
                 <span className="hidden sm:inline">New entry</span>
               </Button>
