@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -12,10 +12,6 @@ const NAV_LINK =
   "text-vellum/65 hover:text-vellum transition-colors " +
   "underline-offset-[6px] decoration-vellum/50 " +
   "focus-visible:outline-none focus-visible:underline focus-visible:decoration-vellum";
-
-const LINK_SECONDARY =
-  "block w-full text-left font-sans not-italic text-sm text-vellum/55 hover:text-vellum/90 " +
-  "px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-vellum/30 rounded-sm";
 
 export function Sidebar({ view, onChange }: Props) {
   const { user, logout } = useAuth();
@@ -61,12 +57,30 @@ export function Sidebar({ view, onChange }: Props) {
         })}
 
         <div className="pt-4 mt-2 border-t border-vellum/10 space-y-0.5">
-          <Link to="/about" className={LINK_SECONDARY}>
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              cn(
+                NAV_LINK,
+                "block w-full px-2 py-2.5",
+                isActive && "text-vellum underline decoration-vellum/70",
+              )
+            }
+          >
             About us
-          </Link>
-          <Link to="/manual" className={LINK_SECONDARY}>
+          </NavLink>
+          <NavLink
+            to="/manual"
+            className={({ isActive }) =>
+              cn(
+                NAV_LINK,
+                "block w-full px-2 py-2.5",
+                isActive && "text-vellum underline decoration-vellum/70",
+              )
+            }
+          >
             Manual
-          </Link>
+          </NavLink>
         </div>
       </div>
 

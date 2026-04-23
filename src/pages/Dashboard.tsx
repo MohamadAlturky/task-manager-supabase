@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TaskCard } from "@/components/dashboard/TaskCard";
@@ -112,21 +113,37 @@ export default function Dashboard() {
                           {id === "today" ? "Daily Record" : "Archived Tasks"}
                         </button>
                       ))}
-                      <div className="pt-3 mt-2 border-t border-vellum/10 space-y-1">
-                        <Link
+                      <div className="pt-3 mt-2 border-t border-vellum/10 space-y-0.5">
+                        <NavLink
                           to="/about"
                           onClick={() => setMobileNavOpen(false)}
-                          className="block w-full text-left px-3 py-2.5 rounded-sm text-sm text-vellum/70 hover:text-vellum"
+                          className={({ isActive }) =>
+                            cn(
+                              "block w-full text-left rounded-sm px-3 py-2.5 text-sm font-serif italic tracking-tight",
+                              "text-vellum/65 hover:text-vellum transition-colors",
+                              "underline-offset-[6px] decoration-vellum/50",
+                              "focus-visible:outline-none focus-visible:underline focus-visible:decoration-vellum",
+                              isActive ? "bg-vellum/10 text-vellum underline decoration-vellum/70" : undefined,
+                            )
+                          }
                         >
                           About us
-                        </Link>
-                        <Link
+                        </NavLink>
+                        <NavLink
                           to="/manual"
                           onClick={() => setMobileNavOpen(false)}
-                          className="block w-full text-left px-3 py-2.5 rounded-sm text-sm text-vellum/70 hover:text-vellum"
+                          className={({ isActive }) =>
+                            cn(
+                              "block w-full text-left rounded-sm px-3 py-2.5 text-sm font-serif italic tracking-tight",
+                              "text-vellum/65 hover:text-vellum transition-colors",
+                              "underline-offset-[6px] decoration-vellum/50",
+                              "focus-visible:outline-none focus-visible:underline focus-visible:decoration-vellum",
+                              isActive ? "bg-vellum/10 text-vellum underline decoration-vellum/70" : undefined,
+                            )
+                          }
                         >
                           Manual
-                        </Link>
+                        </NavLink>
                       </div>
                     </div>
                     <div className="px-7 pb-7 pt-4 border-t border-vellum/10">
