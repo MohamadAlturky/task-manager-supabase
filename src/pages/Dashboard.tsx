@@ -19,7 +19,7 @@ import { ActivityLogMobile } from "@/components/dashboard/ActivityLogMobile";
 type View = "today" | "backlog" | "log";
 
 const SIDEBAR_OPEN_KEY = "chronicle-sidebar-open";
-
+// just push
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { tasks, log, createTask, toggleComplete, moveTask, deleteTask, clearLog } = useTasks(user);
