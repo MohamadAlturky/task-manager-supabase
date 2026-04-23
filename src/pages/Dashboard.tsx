@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useTasks } from "@/hooks/useTasks";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -17,10 +18,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActivityLogMobile } from "@/components/dashboard/ActivityLogMobile";
 import { ArchivedTasksTable } from "@/components/dashboard/ArchivedTasksTable";
 
-type View = "today" | "backlog" | "log" | "archived";
+type View = "today" | "archived";
 
 const SIDEBAR_OPEN_KEY = "chronicle-sidebar-open";
-// just push
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { tasks, log, createTask, toggleComplete, moveTask, deleteTask, clearLog, toggleArchive } = useTasks(user);
@@ -48,7 +49,7 @@ export default function Dashboard() {
   const todayTasks = useMemo(
     () =>
       tasks
-        .filter((t) => t.status === "today" || t.status === "done")
+        .filter((t) => !t.archived && (t.status === "today" || t.status === "done"))
         .sort((a, b) => {
           if (a.status !== b.status) return a.status === "done" ? 1 : -1;
           const order = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -57,7 +58,7 @@ export default function Dashboard() {
     [tasks],
   );
   const backlogTasks = useMemo(
-    () => tasks.filter((t) => t.status === "backlog"),
+    () => tasks.filter((t) => !t.archived && t.status === "backlog"),
     [tasks],
   );
 
@@ -97,7 +98,7 @@ export default function Dashboard() {
                       <span className="font-serif text-2xl italic">Donut</span>
                     </div>
                     <div className="px-4 space-y-1 flex-1">
-                      {(["today", "backlog", "log", "archived"] as View[]).map((id) => (
+                      {(["today", "archived"] as const).map((id) => (
                         <button
                           key={id}
                           onClick={() => {
@@ -108,9 +109,25 @@ export default function Dashboard() {
                             view === id ? "bg-vellum/10 text-vellum" : "text-vellum/60"
                           }`}
                         >
-                          {id === "today" ? "Daily Record" : id === "backlog" ? "The Backlog" : id === "log" ? "History" : "Archived Tasks"}
+                          {id === "today" ? "Daily Record" : "Archived Tasks"}
                         </button>
                       ))}
+                      <div className="pt-3 mt-2 border-t border-vellum/10 space-y-1">
+                        <Link
+                          to="/about"
+                          onClick={() => setMobileNavOpen(false)}
+                          className="block w-full text-left px-3 py-2.5 rounded-sm text-sm text-vellum/70 hover:text-vellum"
+                        >
+                          About us
+                        </Link>
+                        <Link
+                          to="/manual"
+                          onClick={() => setMobileNavOpen(false)}
+                          className="block w-full text-left px-3 py-2.5 rounded-sm text-sm text-vellum/70 hover:text-vellum"
+                        >
+                          Manual
+                        </Link>
+                      </div>
                     </div>
                     <div className="px-7 pb-7 pt-4 border-t border-vellum/10">
                       <p className="font-serif italic text-vellum/90">{user}</p>
@@ -169,10 +186,8 @@ export default function Dashboard() {
           {/* Mobile view tabs */}
           <div className="md:hidden px-5 pb-3">
             <Tabs value={view} onValueChange={(v) => setView(v as View)}>
-              <TabsList className="grid grid-cols-4 w-full bg-secondary/60">
+              <TabsList className="grid grid-cols-2 w-full bg-secondary/60">
                 <TabsTrigger value="today">Today</TabsTrigger>
-                <TabsTrigger value="backlog">Backlog</TabsTrigger>
-                <TabsTrigger value="log">History</TabsTrigger>
                 <TabsTrigger value="archived">Archived</TabsTrigger>
               </TabsList>
             </Tabs>
@@ -180,10 +195,10 @@ export default function Dashboard() {
         </header>
 
         {/* Body — desktop dual columns */}
-        <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto md:overflow-y-visible md:flex-row md:min-h-0">
           {/* Backlog column */}
           <section
-            className={`${view === "backlog" ? "flex" : "hidden"} ${view !== "archived" ? "md:flex" : "md:hidden"} flex-col w-full md:w-80 lg:w-96 border-r border-border/80 bg-muted/20`}
+            className={`${view === "archived" ? "hidden" : "flex"} max-md:shrink-0 flex-col w-full md:w-80 lg:w-96 border-r border-border/80 bg-muted/20`}
           >
             <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-secondary/25">
               <div className="min-w-0">
@@ -235,7 +250,9 @@ export default function Dashboard() {
 
           {/* Today column */}
           <section
-            className={`${view === "today" ? "flex" : "hidden"} ${view !== "archived" ? "md:flex" : "md:hidden"} flex-col flex-1 min-w-0 relative bg-gradient-to-br from-parchment/45 via-background/90 to-secondary/35 paper-texture`}
+            className={`${
+              view === "archived" ? "hidden" : "flex"
+            } flex-col max-md:flex-none md:flex-1 min-w-0 min-h-0 relative bg-gradient-to-br from-parchment/45 via-background/90 to-secondary/35 paper-texture`}
           >
             <div className="px-6 sm:px-7 pt-8 pb-5 flex items-end justify-between border-b border-border/60 bg-background/40 backdrop-blur-[2px]">
               <div className="min-w-0">
@@ -285,9 +302,9 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* Mobile log view */}
-          {view === "log" && (
-            <div className="md:hidden flex-1 overflow-y-auto">
+          {/* Mobile activity log (stacked under daily columns when on Today tab) */}
+          {view === "today" && (
+            <div className="md:hidden w-full max-md:shrink-0 border-t border-border/80 bg-background/30">
               <ActivityLogMobile log={log} onClear={clearLog} />
             </div>
           )}

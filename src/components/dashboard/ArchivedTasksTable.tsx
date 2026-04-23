@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
-import { Calendar as CalendarIcon, RotateCcw, Search } from "lucide-react";
-import { useArchivedTasks } from "@/hooks/useArchivedTasks";
+import { Calendar as CalendarIcon, RotateCcw, Search, ExternalLink } from "lucide-react";
+import { useTasks } from "@/hooks/useTasks";
 import { useAuth } from "@/context/AuthContext";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +25,24 @@ import { PRIORITY_META } from "@/lib/task-utils";
 
 export function ArchivedTasksTable() {
   const { user } = useAuth();
-  const { tasks, isLoading, unarchiveTask } = useArchivedTasks(user);
+  const { tasks, isLoading, toggleArchive } = useTasks(user);
 
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
+  const archivedTasks = useMemo(() => {
+    return tasks
+      .filter((t) => t.archived)
+      .sort((a, b) => {
+        const dateA = a.archivedAt ? new Date(a.archivedAt).getTime() : 0;
+        const dateB = b.archivedAt ? new Date(b.archivedAt).getTime() : 0;
+        return dateB - dateA;
+      });
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return archivedTasks.filter((task) => {
       const matchSearch = task.title.toLowerCase().includes(search.toLowerCase());
       
       let matchDate = true;
@@ -49,7 +60,7 @@ export function ArchivedTasksTable() {
 
       return matchSearch && matchDate;
     });
-  }, [tasks, search, dateFrom, dateTo]);
+  }, [archivedTasks, search, dateFrom, dateTo]);
 
   return (
     <div className="space-y-4 max-w-5xl mx-auto w-full pt-4">
@@ -154,7 +165,9 @@ export function ArchivedTasksTable() {
                 return (
                   <TableRow key={task.id}>
                     <TableCell className="font-medium">
-                      {task.title}
+                      <Link to={`/tasks/${task.id}`} className="hover:underline hover:text-accent transition-colors">
+                        {task.title}
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <span className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
@@ -166,15 +179,28 @@ export function ArchivedTasksTable() {
                       {task.archivedAt ? format(new Date(task.archivedAt), "PPP p") : "Unknown"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => unarchiveTask(task.id)}
-                        className="h-8 gap-2"
-                      >
-                        <RotateCcw className="size-3.5" />
-                        <span className="hidden sm:inline">Unarchive</span>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="h-8 gap-2 hover:text-accent hover:bg-accent/10"
+                        >
+                          <Link to={`/tasks/${task.id}`}>
+                            <ExternalLink className="size-3.5" />
+                            <span className="hidden sm:inline">Details</span>
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleArchive(task.id, false)}
+                          className="h-8 gap-2"
+                        >
+                          <RotateCcw className="size-3.5" />
+                          <span className="hidden sm:inline">Unarchive</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

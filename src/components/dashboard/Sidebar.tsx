@@ -1,9 +1,10 @@
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  view: "today" | "backlog" | "log" | "archived";
-  onChange: (v: "today" | "backlog" | "log" | "archived") => void;
+  view: "today" | "archived";
+  onChange: (v: "today" | "archived") => void;
 }
 
 const NAV_LINK =
@@ -12,13 +13,15 @@ const NAV_LINK =
   "underline-offset-[6px] decoration-vellum/50 " +
   "focus-visible:outline-none focus-visible:underline focus-visible:decoration-vellum";
 
+const LINK_SECONDARY =
+  "block w-full text-left font-sans not-italic text-sm text-vellum/55 hover:text-vellum/90 " +
+  "px-2 py-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-vellum/30 rounded-sm";
+
 export function Sidebar({ view, onChange }: Props) {
   const { user, logout } = useAuth();
 
   const items: { id: Props["view"]; label: string }[] = [
     { id: "today", label: "Daily Record" },
-    { id: "backlog", label: "The Backlog" },
-    { id: "log", label: "History" },
     { id: "archived", label: "Archived Tasks" },
   ];
 
@@ -33,7 +36,6 @@ export function Sidebar({ view, onChange }: Props) {
     >
       <div className="border-b border-vellum/10 px-7 pt-8 pb-10">
         <div className="flex items-center gap-3">
-          <div className="font-serif text-xl italic text-vellum shrink-0 leading-none">C</div>
           <span className="font-serif text-2xl italic tracking-tight text-vellum truncate">Donut</span>
         </div>
       </div>
@@ -57,6 +59,15 @@ export function Sidebar({ view, onChange }: Props) {
             </button>
           );
         })}
+
+        <div className="pt-4 mt-2 border-t border-vellum/10 space-y-0.5">
+          <Link to="/about" className={LINK_SECONDARY}>
+            About us
+          </Link>
+          <Link to="/manual" className={LINK_SECONDARY}>
+            Manual
+          </Link>
+        </div>
       </div>
 
       <div className="mt-auto border-t border-vellum/10 px-7 pb-7 pt-4 space-y-3">

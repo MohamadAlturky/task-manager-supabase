@@ -10,6 +10,8 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import TaskDetails from "./pages/TaskDetails.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AboutUs from "./pages/AboutUs.tsx";
+import Manual from "./pages/Manual.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TaskDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <ProtectedRoute>
+                  <AboutUs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manual"
+              element={
+                <ProtectedRoute>
+                  <Manual />
                 </ProtectedRoute>
               }
             />

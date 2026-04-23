@@ -46,13 +46,12 @@ export function useTasks(username: string | null) {
   const tasksKey = ["tasks", username];
   const logsKey = ["logs", username];
 
-  const { data: tasks = [] } = useQuery<Task[]>({
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
     queryKey: tasksKey,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
-        .eq("archived", false)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data.map(rowToTask);
@@ -258,6 +257,7 @@ export function useTasks(username: string | null) {
 
   return {
     tasks,
+    isLoading,
     log,
     createTask,
     toggleComplete,
