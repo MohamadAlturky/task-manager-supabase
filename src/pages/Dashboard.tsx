@@ -91,7 +91,7 @@ export default function Dashboard() {
                   <div className="flex flex-col h-full">
                     <div className="px-7 pt-8 pb-10 flex items-center gap-3">
                       <div className="size-9 rounded-sm bg-vellum/10 border border-vellum/20 grid place-items-center">
-                        <span className="font-serif text-xl italic text-vellum">C</span>
+                        <span className="font-serif text-xl italic text-vellum">D</span>
                       </div>
                       <span className="font-serif text-2xl italic">Donut</span>
                     </div>
@@ -128,7 +128,7 @@ export default function Dashboard() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex shrink-0 -ml-1 text-muted-foreground hover:text-foreground"
+                className="hidden md:flex shrink-0 -ml-1 text-muted-foreground hover:text-white"
                 onClick={() => setSidebarOpen((o) => !o)}
                 aria-expanded={sidebarOpen}
                 aria-controls={sidebarOpen ? "app-sidebar" : undefined}
