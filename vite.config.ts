@@ -3,8 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
-import { componentTagger } from "lovable-tagger";
-
 /** GitHub project Pages URL, e.g. https://owner.github.io/repo (no trailing slash). */
 function resolveSiteUrl(): string {
   const custom = process.env.VITE_SITE_URL?.trim().replace(/\/$/, "");
@@ -33,7 +31,7 @@ function resolveBase(): string {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(() => {
   const base = resolveBase();
   const siteUrl = resolveSiteUrl();
 
@@ -48,7 +46,6 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      mode === "development" && componentTagger(),
       {
         name: "github-pages-spa-fallback",
         closeBundle() {
