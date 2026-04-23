@@ -88,13 +88,14 @@ export function useTasks(username: string | null) {
     action: LogAction;
     note?: string;
   }) {
-    await supabase.from("activity_logs").insert({
+    const { error } = await supabase.from("activity_logs").insert({
       task_id: entry.taskId ?? null,
       task_title: entry.taskTitle,
       action: entry.action,
       at: new Date().toISOString(),
       note: entry.note ?? null,
     });
+    if (error) throw error;
   }
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -240,13 +241,18 @@ export function useTasks(username: string | null) {
   }
 
   async function toggleArchive(id: string, isArchived: boolean) {
+    const task = tasks.find((t) => t.id === id);
     const now = new Date().toISOString();
     await supabase.from("tasks").update({
       archived: isArchived,
       archived_at: isArchived ? now : null,
       updated_at: now,
     }).eq("id", id);
-    await addLog({ taskTitle: "Task", action: isArchived ? "archived" : "unarchived" });
+    await addLog({
+      taskId: id,
+      taskTitle: task?.title ?? "Task",
+      action: isArchived ? "archived" : "unarchived",
+    });
     invalidate();
   }
 
