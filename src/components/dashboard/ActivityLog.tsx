@@ -5,6 +5,7 @@ import { formatDateTime } from "@/lib/task-utils";
 import { cn } from "@/lib/utils";
 import { ActivityHistoryTableDialog } from "@/components/dashboard/ActivityHistoryTableDialog";
 
+// act
 export function ActivityLog({ log, onClear }: { log: LogEntry[]; onClear: () => void }) {
   const [tableOpen, setTableOpen] = useState(false);
 
