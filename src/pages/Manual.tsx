@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
+// man
 export default function Manual() {
   return (
     <div className="min-h-dvh bg-background paper-texture flex flex-col">
